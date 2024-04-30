@@ -30,7 +30,7 @@ export default function Home() {
   }
 
   function navigateToPlayerPage(steamID64) {
-    router.push(`/player/${steamID64}`);
+    router.push(`/player/${steamID64}?steam32=${encodeURIComponent(steamID)}`);
   }
 
   return (
