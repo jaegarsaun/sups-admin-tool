@@ -2,15 +2,17 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from 'next/navigation'
 import Link from "next/link";
+import Card from "@/app/components/Card";
 
 export default function Page({ params }) {
   const searchParams = useSearchParams()
   let steamid64 = params.steamid;
   let steamid32 = searchParams.get('steam32');
-  console.log(steamid32);
+  // console.log(steamid32);
   const [playerData, setPlayerData] = useState(""); // will hold all the general information
+  const [orgColor, setOrgColor] = useState(""); // will hold the color of the organization [DarkRP.OrgColor
   const [cwrpPlayerData, setCwrpPlayerData] = useState(""); // will hold all the CWRP characters
-  const [milrpPlayerData, setMilrpPlayerData] = useState(""); // will hold all the MILRP characters
+  // const [milrpPlayerData, setMilrpPlayerData] = useState(""); // will hold all the MILRP characters
 
  // Load player data
   useEffect(() => {
@@ -22,6 +24,8 @@ export default function Page({ params }) {
         const data = await response.json();
 
         setPlayerData(data);
+        setOrgColor(data.DarkRP.OrgColor);
+        console.log (data);
       } catch (error) {
         console.error(error);
       }
@@ -55,6 +59,47 @@ export default function Page({ params }) {
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
   }
 
+  function convertUnixToDate(unixTimestamp) {
+    // Convert the string to an integer
+    const timestamp = parseInt(unixTimestamp, 10);
+
+    // Create a new Date object based on the Unix timestamp
+    const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
+
+    // Format the date and time in a readable format
+    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+function formatCurrency(value, locale = 'en-US', currency = 'USD') {
+  
+  const formatter = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0
+  });
+
+  // Format the number and return it
+  return formatter.format(value);
+}
+
+function getRankColor(rank) {
+  switch (rank) {
+    case 'User':
+      return 'hover:border-gray-500';
+    case 'Moderator':
+      return 'hover:border-green-500';
+    case 'Admin':
+      return 'hover:border-purple-500';
+    case 'Super Admin':
+      return 'hover:border-red-500';
+    case 'Council':
+      return 'hover:border-secondaryBlue';
+    default:
+      return 'hover:border-gray-500';
+  }
+}
+
   // Check if playerData is loaded before rendering the whole page
   if (!playerData) {
     return (
@@ -73,12 +118,23 @@ export default function Page({ params }) {
           <span className="text-zinc-400">{playerData.SteamID32}</span>
         </h1>
         <div className="flex gap-2">
-          <Link
-            href={playerData.ForumURL}
-            className="rounded-xl text-center bg-tetraDark text-white p-3 font-medium hover:bg-secondaryBlue transition-colors"
-          >
-            Forum Profile
-          </Link>
+        {playerData.ForumURL ? (
+                <Link
+                    href={playerData.ForumURL}
+                    className="rounded-xl text-center bg-tetraDark text-white p-3 font-medium hover:bg-secondaryBlue transition-colors"
+                >
+                    {/* Content of the link here, like 'Visit Forum' */}
+                    Visit Forum
+                </Link>
+            ) : (
+                <button
+                    disabled
+                    className="rounded-xl text-center bg-tetraDark text-white p-3 font-medium opacity-50 cursor-not-allowed"
+                >
+                    {/* Content of the button here, like 'No Forum Link' */}
+                    No Forum Link
+                </button>
+            )}
           <Link
             href={playerData.SteamURL}
             className="rounded-xl text-center bg-tetraDark text-white p-3 font-medium hover:bg-secondaryBlue transition-colors"
@@ -89,41 +145,14 @@ export default function Page({ params }) {
       </div>
       <div className="rounded-xl bg-secondaryDark w-full h-[3px] my-10"></div>
       <section className=" grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4 w-full">
-        {/* 
-          DarkRP.Money
-          DarkRP.Karma
-          DarkRPOrgName (With a border of DarkRP.OrgColor)
-          DarkRP.Acheivments.length
-
-          Badmin.PlayTime
-          Badmin.FirstJoin
-          Badmin.LastrSeen
-          Badmin.Ranks.DarkRP
-        */}
-        <div className="bg-secondaryDark p-4 rounded-xl text-white w-full">
-          ${playerData.DarkRP.Money}
-        </div>
-        <div className="bg-secondaryDark p-4 rounded-xl text-white w-full">
-          {playerData.DarkRP.Karma}
-        </div>
-        <div className="bg-secondaryDark p-4 rounded-xl text-white w-full">
-          {playerData.DarkRP.OrgName}
-        </div>
-        <div className="bg-secondaryDark p-4 rounded-xl text-white w-full">
-          {playerData.DarkRP.Achievements.length}
-        </div>
-        <div className="bg-secondaryDark p-4 rounded-xl text-white w-full">
-          Div 1
-        </div>
-        <div className="bg-secondaryDark p-4 rounded-xl text-white w-full">
-          Div 1
-        </div>
-        <div className="bg-secondaryDark p-4 rounded-xl text-white w-full">
-          Div 1
-        </div>
-        <div className="bg-secondaryDark p-4 rounded-xl text-white w-full">
-          Div 1
-        </div>
+        <Card content={formatCurrency(playerData.DarkRP.Money)} className="border border-transparent hover:border-green-500"/>
+        <Card content={playerData.DarkRP.Karma} className="border border-transparent hover:border-purple-500"/>
+        <Card content={playerData.DarkRP.OrgName} className={`border border-transparent hover:border-[${orgColor}]`}/>
+        <Card content={playerData.DarkRP.Achievements.length} className="border border-transparent hover:border-primaryBlue"/>
+        <Card content={formatPlaytime(playerData.Badmin.PlayTime)} className="border border-transparent hover:border-secondaryBlue"/>
+        <Card content={convertUnixToDate(playerData.Badmin.FirstJoin)} className="border border-transparent hover:border-secondaryBlue"/>
+        <Card content={formatPlaytime(playerData.Badmin.LastSeen) + ' ago'} className="border border-transparent hover:border-secondaryBlue"/>
+        <Card content={playerData.Badmin.Ranks.DarkRP} className={`border border-transparent ${getRankColor(playerData.Badmin.Ranks.DarkRP)}`}/>
       </section>
     </main>
   );
