@@ -14,7 +14,13 @@ import {
 } from "@table-library/react-table-library/table";
 import { useTheme } from "@table-library/react-table-library/theme";
 import { getTheme } from "@table-library/react-table-library/baseline";
-import { formatCurrency, convertUnixToDate, getRankColor, getTimeForSsrpCharacters, formatPlaytime } from "@/app/components/utils";
+import {
+  formatCurrency,
+  convertUnixToDate,
+  getRankColor,
+  getTimeForSsrpCharacters,
+  formatPlaytime,
+} from "@/app/components/utils";
 
 export default function Page({ params }) {
   const searchParams = useSearchParams();
@@ -25,6 +31,7 @@ export default function Page({ params }) {
   const [orgColor, setOrgColor] = useState(""); // will hold the color of the organization [DarkRP.OrgColor
   const [cwrpPlayerData, setCwrpPlayerData] = useState(""); // will hold all the CWRP characters
   const [milrpPlayerData, setMilrpPlayerData] = useState(""); // will hold all the MILRP characters
+  const [friendsList, setFriendsList] = useState(""); // will hold all the friends of the player [SteamID64]
 
   // Load player data
   useEffect(() => {
@@ -61,13 +68,25 @@ export default function Page({ params }) {
       } catch (error) {
         console.error(error);
       }
+
+      // Fetch friends list from steam
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/player/getfriends/${steamid64}`
+        );
+        const data = await response.json();
+        console.log(data);
+        console.log(data.friendslist);
+        setFriendsList(data.friendslist);
+      } catch (error) {
+        console.error(error);
+      }
     }
 
     if (steamid64) {
       fetchPlayerData();
     }
   }, [steamid64]);
-
 
   // Check if playerData is loaded before rendering the whole page
   if (!playerData) {
@@ -77,7 +96,6 @@ export default function Page({ params }) {
       </main>
     );
   }
-  console.log(playerData.DarkRP.OrgColor);
   // If playerData is loaded, render the page with all its content
   return (
     <main className="flex flex-col px-5 py-[5rem] w-full lg:px-[20rem] md:px-[10rem] sm:px-[5rem]">
@@ -190,7 +208,7 @@ export default function Page({ params }) {
         />
         <Card
           content={playerData.DarkRP.OrgName}
-          className={`border border-transparent hover:border-[${orgColor}`}
+          className={`border border-transparent hover:border-[${playerData.DarkRP.OrgColor}]`}
           title="Org Name"
         />
         <Card
@@ -205,41 +223,80 @@ export default function Page({ params }) {
       </div>
 
       <section className="container mx-auto rounded-xl overflow-hidden">
-  <table className="w-full">
-    <thead className="bg-secondaryDark">
-      <tr>
-        <th className="px-4 py-2 text-white">Ban ID</th>
-        <th className="px-4 py-2 text-white">Date</th>
-        <th className="px-4 py-2 text-white">Server</th>
-        <th className="px-4 py-2 text-white">Offender</th>
-        <th className="px-4 py-2 text-white">Admin</th>
-        <th className="px-4 py-2 text-white">Reason</th>
-        <th className="px-4 py-2 text-white">Length</th>
-        <th className="px-4 py-2 text-white">Unban Reason</th>
-      </tr>
-    </thead>
-    <tbody>
-      {playerData.Badmin.Bans.map((ban) => (
-        <tr
-          key={ban.BanID}
-          className={`text-center ${
-            ban.UnbanReason ? 'bg-green-600' : (ban.IsActive ? 'bg-red-600' : 'bg-tetraDark')
-          }`}
-        >
-          <td className="px-4 py-2 text-gray-300">{ban.BanID}</td>
-          <td className="px-4 py-2 text-gray-300">{convertUnixToDate(ban.Date)}</td>
-          <td className="px-4 py-2 text-gray-300">{ban.Server}</td>
-          <td className="px-4 py-2 text-gray-300">{ban.Name}</td>
-          <td className="px-4 py-2 text-gray-300">{ban.AdminName}</td>
-          <td className="px-4 py-2 text-gray-300">{ban.Reason}</td>
-          <td className="px-4 py-2 text-gray-300">{ban.Length}</td>
-          <td className="px-4 py-2 text-gray-300">{ban.UnbanReason}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</section>
-
+        <table className="w-full">
+          <thead className="bg-secondaryDark">
+            <tr>
+              <th className="px-4 py-2 text-white">Ban ID</th>
+              <th className="px-4 py-2 text-white">Date</th>
+              <th className="px-4 py-2 text-white">Server</th>
+              <th className="px-4 py-2 text-white">Offender</th>
+              <th className="px-4 py-2 text-white">Admin</th>
+              <th className="px-4 py-2 text-white">Reason</th>
+              <th className="px-4 py-2 text-white">Length</th>
+              <th className="px-4 py-2 text-white">Unban Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {playerData.Badmin.Bans.map((ban) => (
+              <tr
+                key={ban.BanID}
+                className={`text-center ${
+                  ban.UnbanReason
+                    ? "bg-green-600"
+                    : ban.IsActive
+                    ? "bg-red-600"
+                    : "bg-tetraDark"
+                }`}
+              >
+                <td className="px-4 py-2 text-gray-300">{ban.BanID}</td>
+                <td className="px-4 py-2 text-gray-300">
+                  {convertUnixToDate(ban.Date)}
+                </td>
+                <td className="px-4 py-2 text-gray-300">{ban.Server}</td>
+                <td className="px-4 py-2 text-gray-300">{ban.Name}</td>
+                <td className="px-4 py-2 text-gray-300">{ban.AdminName}</td>
+                <td className="px-4 py-2 text-gray-300">{ban.Reason}</td>
+                <td className="px-4 py-2 text-gray-300">{ban.Length}</td>
+                <td className="px-4 py-2 text-gray-300">{ban.UnbanReason}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+      <div className="flex flex-row gap-4 justify-center items-center">
+        <h1 className="font-bold text-xl text-white">Steam Friends</h1>
+        <div className="rounded-xl bg-secondaryDark grow h-[3px] my-10"></div>
+      </div>
+      <section className="container mx-auto rounded-xl overflow-hidden">
+        {friendsList &&
+        friendsList.friends &&
+        friendsList.friends.length > 0 ? (
+          <table className="w-full">
+            <thead className="bg-secondaryDark">
+              <tr>
+                <th className="px-4 py-2 text-white">SteamID</th>
+                <th className="px-4 py-2 text-white">Relationship</th>
+                <th className="px-4 py-2 text-white">Friend Since</th>
+              </tr>
+            </thead>
+            <tbody>
+              {friendsList.friends.map((friend) => (
+                <tr key={friend.steamid} className="text-center bg-tetraDark">
+                  <td className="px-4 py-2 text-gray-300">{friend.steamid}</td>
+                  <td className="px-4 py-2 text-gray-300">
+                    {friend.relationship}
+                  </td>
+                  <td className="px-4 py-2 text-gray-300">
+                    {convertUnixToDate(friend.friend_since)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-center text-gray-300">No friends found.</p>
+        )}
+      </section>
     </main>
   );
 }

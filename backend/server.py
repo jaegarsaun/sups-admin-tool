@@ -55,12 +55,28 @@ def get_milrp_characters(profile_id):
         'forum_member_id': '1176',
         'forum_login_key': 'f349bf3a9f89d257bd522be679d3d663',
         'forum_loggedIn': '1714519508'
+        # TODO: MAKE THIS ALL FUCKING PRIVATE PLEASE BEFORE PUTTING INTO PROD
     }
     
     # Make the request with the specified cookies
     response = requests.get(url, cookies=cookies)
     
     # Check if the request was successful
+    if response.status_code == 200:
+        # Process the data (assuming JSON response)
+        data = response.json()
+        return jsonify(data)
+    else:
+        return jsonify({'error': 'Failed to fetch data', 'status_code': response.status_code})
+    
+@app.route("/api/player/getfriends/<profile_id>")
+def get_friends(profile_id):
+    apikey = '73CCCAFC811616858CB461F4F1D92227' #TODO: MAKE THIS FUCKING PRIVATE BEFORE PUTTING INTO PROD
+    url = f'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={apikey}&steamid={profile_id}&relationship=friend'
+    # Make the request
+    response = requests.get(url)
+
+    #Check if the request was successful
     if response.status_code == 200:
         # Process the data (assuming JSON response)
         data = response.json()

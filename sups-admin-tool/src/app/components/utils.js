@@ -72,3 +72,27 @@ export function getTimeForSsrpCharacters(SsrpPlayerData) {
   }
   return "Loading...";
 }
+
+
+export function convertSteamID32ToSteamID64(steamID32) {
+    const parts = steamID32.split(':');
+
+    if (parts.length !== 3) {
+      alert("Invalid SteamID format");
+      return;
+    }
+
+    const Y = parseInt(parts[1], 10);
+    const Z = parseInt(parts[2], 10);
+
+    // Check for NaN values before converting
+    if (isNaN(Y) || isNaN(Z)) {
+      alert("Invalid SteamID parts");
+      return;
+    }
+
+    const baseNumber = 76561197960265728n;
+    const steamID64 = BigInt(Z) * 2n + BigInt(Y) + baseNumber;
+
+    return steamID64.toString();
+  }
