@@ -3,6 +3,18 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Card from "@/app/components/Card";
+import {
+  Table,
+  Header,
+  HeaderRow,
+  Body,
+  Row,
+  HeaderCell,
+  Cell,
+} from "@table-library/react-table-library/table";
+import { useTheme } from "@table-library/react-table-library/theme";
+import { getTheme } from "@table-library/react-table-library/baseline";
+import { formatCurrency, convertUnixToDate, getRankColor, getTimeForSsrpCharacters, formatPlaytime } from "@/app/components/utils";
 
 export default function Page({ params }) {
   const searchParams = useSearchParams();
@@ -56,80 +68,6 @@ export default function Page({ params }) {
     }
   }, [steamid64]);
 
-  function formatPlaytime(int) {
-    const hours = Math.floor(int / 3600);
-    const mins = Math.floor((int % 3600) / 60);
-    const secs = int % 60;
-
-    // Format the time components to add leading zeros if necessary
-    const formattedHours = hours.toString().padStart(2, "0");
-    const formattedMinutes = mins.toString().padStart(2, "0");
-    const formattedSeconds = secs.toString().padStart(2, "0");
-
-    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-  }
-
-  function convertUnixToDate(unixTimestamp) {
-    // Convert the string to an integer
-    const timestamp = parseInt(unixTimestamp, 10);
-
-    // Create a new Date object based on the Unix timestamp
-    const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
-
-    // Format the date and time in a readable format
-    const options = { day: "2-digit", month: "short", year: "numeric" };
-    return date.toLocaleDateString("en-US", options);
-  }
-
-  function formatCurrency(value, locale = "en-US", currency = "USD") {
-    const formatter = new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 0,
-    });
-
-    // Format the number and return it
-    return formatter.format(value);
-  }
-
-  function getRankColor(rank) {
-    switch (rank) {
-      case "User":
-        return "hover:border-gray-500";
-      case "VIP":
-        return "hover:border-yellow-500";
-      case "Double Admin":
-        return "hover:border-pink-500";
-      case "Moderator":
-        return "hover:border-green-500";
-      case "Admin":
-        return "hover:border-purple-500";
-      case "Super Admin":
-        return "hover:border-red-500";
-      case "Council":
-        return "hover:border-secondaryBlue";
-      default:
-        return "hover:border-gray-500";
-    }
-  }
-
-  function getTimeForSsrpCharacters(SsrpPlayerData) {
-    let totalPlaytime = 0;
-
-    if (
-      SsrpPlayerData &&
-      SsrpPlayerData.response &&
-      SsrpPlayerData.response.characters
-    ) {
-      let SsrpCharacterList = SsrpPlayerData.response.characters;
-
-      for (let i = 0; i < SsrpCharacterList.length; i++) {
-        totalPlaytime += SsrpCharacterList[i].playtime;
-      }
-      return formatPlaytime(totalPlaytime);
-    }
-    return "Loading...";
-  }
 
   // Check if playerData is loaded before rendering the whole page
   if (!playerData) {
@@ -144,10 +82,22 @@ export default function Page({ params }) {
   return (
     <main className="flex flex-col px-5 py-[5rem] w-full lg:px-[20rem] md:px-[10rem] sm:px-[5rem]">
       <div className="flex justify-between w-full gap-2 items-start flex-col md:flex-row md:items-center">
-        <h1 className="text-white font-medium text-3xl">
-          {playerData.Badmin.Name} &#8226;{" "}
-          <span className="text-zinc-400">{playerData.SteamID32}</span>
-        </h1>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-white font-medium text-3xl">
+            {playerData.Badmin.Name} &#8226;{" "}
+            <span className="text-zinc-400">{playerData.SteamID32}</span>
+          </h1>
+          <div className="flex gap-2">
+            <div className="p-2 bg-tetraDark w-1/2 text-center font-medium text-white rounded-xl">
+              <span className="text-gray-400">First Join: </span>
+              {convertUnixToDate(playerData.Badmin.FirstJoin)}
+            </div>
+            <div className="p-2 bg-tetraDark w-1/2 text-center font-medium text-white rounded-xl">
+              <span className="text-gray-400">Last Seen: </span>
+              {formatPlaytime(playerData.Badmin.LastSeen)} ago
+            </div>
+          </div>
+        </div>
         <div className="flex gap-2">
           {playerData.ForumURL ? (
             <Link
@@ -175,7 +125,10 @@ export default function Page({ params }) {
         </div>
       </div>
 
-      <div className="rounded-xl bg-secondaryDark w-full h-[3px] my-10"></div>
+      <div className="flex flex-row gap-4 justify-center items-center my-10">
+        <h1 className="font-bold text-xl text-white">Info</h1>
+        <div className="rounded-xl bg-secondaryDark grow h-[3px]"></div>
+      </div>
 
       <section className="flex flex-col gap-4">
         <section className="flex flex-col gap-4 md:flex-row">
@@ -219,9 +172,12 @@ export default function Page({ params }) {
           />
         </section>
       </section>
-      <div className="rounded-xl bg-secondaryDark w-full h-[3px] my-10"></div>
+      <div className="flex flex-row gap-4 justify-center items-center my-10">
+        <h1 className="font-bold text-xl text-white">DarkRP Stats</h1>
+        <div className="rounded-xl bg-secondaryDark grow h-[3px]"></div>
+      </div>
 
-      <section className=" grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4 w-full">
+      <section className=" grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
         <Card
           content={formatCurrency(playerData.DarkRP.Money)}
           title="Money"
@@ -234,32 +190,56 @@ export default function Page({ params }) {
         />
         <Card
           content={playerData.DarkRP.OrgName}
+          className={`border border-transparent hover:border-[${orgColor}`}
           title="Org Name"
-          style={{
-            border: `1px solid transparent`,
-            ":hover": {
-              border: `1px solid ${playerData.DarkRP.OrgColor}`,
-            },
-          }}
         />
-
         <Card
           content={playerData.DarkRP.Achievements.length}
           title="Total Achievements"
           className="border border-transparent hover:border-primaryBlue"
         />
-
-        <Card
-          content={convertUnixToDate(playerData.Badmin.FirstJoin)}
-          title="First Join"
-          className="border border-transparent hover:border-secondaryBlue"
-        />
-        <Card
-          content={formatPlaytime(playerData.Badmin.LastSeen) + " ago"}
-          title="Last seen"
-          className="border border-transparent hover:border-secondaryBlue"
-        />
       </section>
+      <div className="flex flex-row gap-4 justify-center items-center">
+        <h1 className="font-bold text-xl text-white">Previous Offences</h1>
+        <div className="rounded-xl bg-secondaryDark grow h-[3px] my-10"></div>
+      </div>
+
+      <section className="container mx-auto rounded-xl overflow-hidden">
+  <table className="w-full">
+    <thead className="bg-secondaryDark">
+      <tr>
+        <th className="px-4 py-2 text-white">Ban ID</th>
+        <th className="px-4 py-2 text-white">Date</th>
+        <th className="px-4 py-2 text-white">Server</th>
+        <th className="px-4 py-2 text-white">Offender</th>
+        <th className="px-4 py-2 text-white">Admin</th>
+        <th className="px-4 py-2 text-white">Reason</th>
+        <th className="px-4 py-2 text-white">Length</th>
+        <th className="px-4 py-2 text-white">Unban Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      {playerData.Badmin.Bans.map((ban) => (
+        <tr
+          key={ban.BanID}
+          className={`text-center ${
+            ban.UnbanReason ? 'bg-green-600' : (ban.IsActive ? 'bg-red-600' : 'bg-tetraDark')
+          }`}
+        >
+          <td className="px-4 py-2 text-gray-300">{ban.BanID}</td>
+          <td className="px-4 py-2 text-gray-300">{convertUnixToDate(ban.Date)}</td>
+          <td className="px-4 py-2 text-gray-300">{ban.Server}</td>
+          <td className="px-4 py-2 text-gray-300">{ban.Name}</td>
+          <td className="px-4 py-2 text-gray-300">{ban.AdminName}</td>
+          <td className="px-4 py-2 text-gray-300">{ban.Reason}</td>
+          <td className="px-4 py-2 text-gray-300">{ban.Length}</td>
+          <td className="px-4 py-2 text-gray-300">{ban.UnbanReason}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</section>
+
     </main>
   );
 }
