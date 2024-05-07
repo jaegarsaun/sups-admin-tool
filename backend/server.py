@@ -1,8 +1,12 @@
 from flask import Flask, jsonify, request
 import requests
 from flask_cors import CORS
-
-authCookie = 'forum_device_key=8d596471e26c08d0678165d263e1d25e; forum_IPSSessionFront=83sgpn2gb8pp92ed3prdb02q90; forum_member_id=1176; forum_login_key=f349bf3a9f89d257bd522be679d3d663; forum_loggedIn=1714519508;'
+# importing os module for environment variables
+import os
+# importing necessary functions from dotenv library
+from dotenv import load_dotenv, dotenv_values 
+# loading variables from .env file
+load_dotenv() 
 
 app = Flask(__name__)
 CORS(app)
@@ -27,11 +31,11 @@ def get_profile(profile_id):
 def get_cw_characters(steamid32):
     url = f'https://superiorservers.co/api/ssrp/cwrp/characters/{steamid32}'
     cookies = {
-        'forum_device_key': '8d596471e26c08d0678165d263e1d25e',
-        'forum_IPSSessionFront': '83sgpn2gb8pp92ed3prdb02q90',
-        'forum_member_id': '1176',
-        'forum_login_key': 'f349bf3a9f89d257bd522be679d3d663',
-        'forum_loggedIn': '1714519508'
+        'forum_device_key': os.getenv('FORUM_DEVICE_KEY'),
+        'forum_IPSSessionFront': os.getenv('FORUM_IPSSESSIONFRONT'),
+        'forum_member_id': os.getenv('FORUM_MEMBER_ID'),
+        'forum_login_key': os.getenv('FORUM_LOGIN_KEY'),
+        'forum_loggedIn': os.getenv('FORUM_LOGGEDIN')
     }
     
     # Make the request with the specified cookies
@@ -50,12 +54,11 @@ def get_cw_characters(steamid32):
 def get_milrp_characters(profile_id):
     url = f'https://superiorservers.co/api/ssrp/milrp/characters/{profile_id}'
     cookies = {
-        'forum_device_key': '8d596471e26c08d0678165d263e1d25e',
-        'forum_IPSSessionFront': '83sgpn2gb8pp92ed3prdb02q90',
-        'forum_member_id': '1176',
-        'forum_login_key': 'f349bf3a9f89d257bd522be679d3d663',
-        'forum_loggedIn': '1714519508'
-        # TODO: MAKE THIS ALL FUCKING PRIVATE PLEASE BEFORE PUTTING INTO PROD
+        'forum_device_key': os.getenv('FORUM_DEVICE_KEY'),
+        'forum_IPSSessionFront': os.getenv('FORUM_IPSSESSIONFRONT'),
+        'forum_member_id': os.getenv('FORUM_MEMBER_ID'),
+        'forum_login_key': os.getenv('FORUM_LOGIN_KEY'),
+        'forum_loggedIn': os.getenv('FORUM_LOGGEDIN')
     }
     
     # Make the request with the specified cookies
@@ -71,7 +74,7 @@ def get_milrp_characters(profile_id):
     
 @app.route("/api/player/getfriends/<profile_id>")
 def get_friends(profile_id):
-    apikey = '73CCCAFC811616858CB461F4F1D92227' #TODO: MAKE THIS FUCKING PRIVATE BEFORE PUTTING INTO PROD
+    apikey = os.getenv("API_KEY") 
     url = f'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={apikey}&steamid={profile_id}&relationship=friend'
     # Make the request
     response = requests.get(url)

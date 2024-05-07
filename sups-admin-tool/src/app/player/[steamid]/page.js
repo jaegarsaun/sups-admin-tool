@@ -3,23 +3,16 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Card from "@/app/components/Card";
-import {
-  Table,
-  Header,
-  HeaderRow,
-  Body,
-  Row,
-  HeaderCell,
-  Cell,
-} from "@table-library/react-table-library/table";
-import { useTheme } from "@table-library/react-table-library/theme";
-import { getTheme } from "@table-library/react-table-library/baseline";
+import { IoMdCloseCircleOutline } from "react-icons/io";
 import {
   formatCurrency,
   convertUnixToDate,
   getRankColor,
   getTimeForSsrpCharacters,
   formatPlaytime,
+  convertSteamID64ToSteamID32,
+  convertSteamID32ToSteamID64,
+  isValidSteamID,
 } from "@/app/components/utils";
 
 export default function Page({ params }) {
@@ -32,6 +25,8 @@ export default function Page({ params }) {
   const [cwrpPlayerData, setCwrpPlayerData] = useState(""); // will hold all the CWRP characters
   const [milrpPlayerData, setMilrpPlayerData] = useState(""); // will hold all the MILRP characters
   const [friendsList, setFriendsList] = useState(""); // will hold all the friends of the player [SteamID64]
+  const [tags, setTags] = useState([]);
+  const [filteredFriends, setFilteredFriends] = useState([]);
 
   // Load player data
   useEffect(() => {
@@ -87,6 +82,30 @@ export default function Page({ params }) {
       fetchPlayerData();
     }
   }, [steamid64]);
+
+  const filterFriends = () => {
+    if (friendsList && friendsList.friends) {
+      const convertedTags = tags.map((tag) => convertSteamID32ToSteamID64(tag));
+      const filtered = friendsList.friends.filter((friend) =>
+        convertedTags.includes(friend.steamid)
+      );
+      setFilteredFriends(filtered);
+    }
+  };
+
+  const removeTags = (indexToRemove) => {
+    setTags(tags.filter((_, index) => index !== indexToRemove));
+  };
+  const addTags = (e) => {
+    if (e.key === "Enter") {
+      if (isValidSteamID(e.target.value)) {
+        setTags([...tags, e.target.value]);
+        e.target.value = "";
+      } else {
+        alert("Invalid SteamID32");
+      }
+    }
+  };
 
   // Check if playerData is loaded before rendering the whole page
   if (!playerData) {
@@ -267,10 +286,65 @@ export default function Page({ params }) {
         <h1 className="font-bold text-xl text-white">Steam Friends</h1>
         <div className="rounded-xl bg-secondaryDark grow h-[3px] my-10"></div>
       </div>
-      <section className="container mx-auto rounded-xl overflow-hidden">
-        {friendsList &&
-        friendsList.friends &&
-        friendsList.friends.length > 0 ? (
+      <div className="flex justify-between gap-4">
+        <div className="flex flex-row gap-2 bg-secondaryDark rounded-xl p-2 grow">
+          <ul className="flex gap-2">
+            {tags.map((tag, index) => (
+              <li
+                key={index}
+                className="text-white bg-primaryBlue py-1 px-2 rounded-xl flex justify-between items-center gap-2"
+              >
+                {tag}
+                <IoMdCloseCircleOutline
+                  onClick={() => removeTags(index)}
+                  className="hover:cursor-pointer"
+                />
+              </li>
+            ))}
+          </ul>
+          <input
+            placeholder="Input SteamID32"
+            type="text"
+            id="tagInput"
+            onKeyUp={addTags}
+            className="bg-transparent text-white outline-none border-none text-md"
+          />
+        </div>
+        <button
+          onClick={filterFriends}
+          className="w-[5vw] bg-primaryBlue hover:bg-secondaryBlue rounded-xl text-white font-medium"
+        >
+          Filter
+        </button>
+      </div>
+
+      <section className="container mx-auto rounded-xl overflow-hidden mt-4">
+        {filteredFriends.length > 0 ? (
+          <table className="w-full">
+            <thead className="bg-secondaryDark">
+              <tr>
+                <th className="px-4 py-2 text-white">SteamID</th>
+                <th className="px-4 py-2 text-white">Relationship</th>
+                <th className="px-4 py-2 text-white">Friend Since</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredFriends.map((friend) => (
+                <tr key={friend.steamid} className="text-center bg-tetraDark">
+                  <td className="px-4 py-2 text-gray-300">
+                    {convertSteamID64ToSteamID32(friend.steamid)}
+                  </td>
+                  <td className="px-4 py-2 text-gray-300">
+                    {friend.relationship}
+                  </td>
+                  <td className="px-4 py-2 text-gray-300">
+                    {convertUnixToDate(friend.friend_since)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : friendsList.friends && friendsList.friends.length > 0 ? (
           <table className="w-full">
             <thead className="bg-secondaryDark">
               <tr>
@@ -282,7 +356,9 @@ export default function Page({ params }) {
             <tbody>
               {friendsList.friends.map((friend) => (
                 <tr key={friend.steamid} className="text-center bg-tetraDark">
-                  <td className="px-4 py-2 text-gray-300">{friend.steamid}</td>
+                  <td className="px-4 py-2 text-gray-300">
+                    {convertSteamID64ToSteamID32(friend.steamid)}
+                  </td>
                   <td className="px-4 py-2 text-gray-300">
                     {friend.relationship}
                   </td>

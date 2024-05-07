@@ -73,6 +73,15 @@ export function getTimeForSsrpCharacters(SsrpPlayerData) {
   return "Loading...";
 }
 
+export function convertSteamID64ToSteamID32(steamID64) {
+  const base = 76561197960265728n; // Base value for SteamID64 to SteamID conversion as BigInt
+  const steamID64BigInt = BigInt(steamID64); // Ensure the input is treated as BigInt
+  const result = steamID64BigInt - base;
+  const remainder = result % 2n; // Use BigInt for modulo
+  const zValue = result / 2n; // Use BigInt division
+
+  return `STEAM_0:${remainder.toString()}:${zValue.toString()}`;
+}
 
 export function convertSteamID32ToSteamID64(steamID32) {
     const parts = steamID32.split(':');
@@ -96,3 +105,8 @@ export function convertSteamID32ToSteamID64(steamID32) {
 
     return steamID64.toString();
   }
+
+  export function isValidSteamID(steamID) {
+    const regex = /^STEAM_\d:\d:\d+$/;
+    return regex.test(steamID);
+}
